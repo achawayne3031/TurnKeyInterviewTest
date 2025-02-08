@@ -11,6 +11,7 @@ import com.TurnKeyInterviewTest.service.ContactService;
 import com.TurnKeyInterviewTest.validation.AddContactValidation;
 import com.TurnKeyInterviewTest.validation.UpdateContactValidation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,9 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 
 @RestController
@@ -39,6 +43,38 @@ public class ContactController {
     public ContactController(ContactService contactService, ContactDao contactDao) {
         this.contactService = contactService;
         this.contactDao = contactDao;
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportContactsToCSV() throws IOException {
+
+        List<Contact> contacts = contactService.allContact();
+
+        // Create a ByteArrayOutputStream to hold the CSV data
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintWriter writer = new PrintWriter(outputStream);
+
+
+        // Write CSV header
+        writer.println("ID,firstName,Email,Phone");
+
+
+        // Write contact data
+        for (Contact contact : contacts) {
+            writer.printf("%d,%s,%s,%s%n", contact.getId(), contact.getFirstName(), contact.getEmail(), contact.getPhoneNumber());
+        }
+
+        writer.flush();
+        writer.close();
+
+
+        // Prepare the response
+        byte[] csvData = outputStream.toByteArray();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=contacts.csv");
+        headers.add("Content-Type", "text/csv");
+
+        return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
     }
 
     @DeleteMapping("/bulk-delete")
