@@ -1,5 +1,6 @@
 package com.TurnKeyInterviewTest.dao.impl;
 
+import com.TurnKeyInterviewTest.contactmanager.ContactGroup;
 import com.TurnKeyInterviewTest.dao.ContactDao;
 import com.TurnKeyInterviewTest.entity.Contact;
 import jakarta.persistence.EntityManager;
@@ -76,6 +77,20 @@ public class ContactDaoImpl implements ContactDao {
         try{
             contact = query.getResultList();
         }catch(Exception e){
+            contact = null;
+        }
+        return contact;
+    }
+
+    @Override
+    public List<Contact> filterByGroup(ContactGroup filterText) {
+
+        TypedQuery<Contact> query = entityManager.createQuery("from Contact where contactGroup = :filterText", Contact.class);
+        query.setParameter("filterText", filterText);
+        List<Contact> contact = null;
+        try{
+            contact = query.getResultList();
+        }catch (Exception e){
             contact = null;
         }
         return contact;

@@ -92,6 +92,11 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
+    public List<Contact> filterByGroup(String filterText) {
+        return contactDao.filterByGroup(ContactGroup.valueOf(filterText.toUpperCase()));
+    }
+
+    @Override
     @Transactional
     public void deleteContacts(List<Long> ids) {
         contactRepository.deleteByIdIn(ids);

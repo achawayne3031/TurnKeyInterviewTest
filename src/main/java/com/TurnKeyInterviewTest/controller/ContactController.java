@@ -8,11 +8,13 @@ import com.TurnKeyInterviewTest.exceptions.CustomException;
 import com.TurnKeyInterviewTest.exceptions.CustomNotFoundException;
 import com.TurnKeyInterviewTest.repository.ContactRepository;
 import com.TurnKeyInterviewTest.service.ContactService;
+import com.TurnKeyInterviewTest.utils.CsvGeneratorUtil;
 import com.TurnKeyInterviewTest.validation.AddContactValidation;
 import com.TurnKeyInterviewTest.validation.UpdateContactValidation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,6 +31,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/contact")
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*", allowCredentials = "true")
 public class ContactController {
 
     private ContactService contactService;
@@ -40,41 +43,21 @@ public class ContactController {
     @Autowired
     private ContactRepository contactRepository;
 
+    @Autowired
+    private CsvGeneratorUtil csvGeneratorUtil;
+
     public ContactController(ContactService contactService, ContactDao contactDao) {
         this.contactService = contactService;
         this.contactDao = contactDao;
     }
 
     @GetMapping("/export")
-    public ResponseEntity<byte[]> exportContactsToCSV() throws IOException {
+    public ResponseEntity exportContactsToCSV() throws IOException {
+        List<Contact> contacts = contactService.getSortedContacts();
 
-        List<Contact> contacts = contactService.allContact();
+        byte[] csvBytes = csvGeneratorUtil.generateCsv(contacts).getBytes();
 
-        // Create a ByteArrayOutputStream to hold the CSV data
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintWriter writer = new PrintWriter(outputStream);
-
-
-        // Write CSV header
-        writer.println("ID,firstName,Email,Phone");
-
-
-        // Write contact data
-        for (Contact contact : contacts) {
-            writer.printf("%d,%s,%s,%s%n", contact.getId(), contact.getFirstName(), contact.getEmail(), contact.getPhoneNumber());
-        }
-
-        writer.flush();
-        writer.close();
-
-
-        // Prepare the response
-        byte[] csvData = outputStream.toByteArray();
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", "attachment; filename=contacts.csv");
-        headers.add("Content-Type", "text/csv");
-
-        return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
+        return new ResponseEntity<>(new ApiResponse<Object>("Export data.", true, csvBytes), HttpStatus.OK);
     }
 
     @DeleteMapping("/bulk-delete")
@@ -82,6 +65,17 @@ public class ContactController {
         contactService.deleteContacts(ids);
         return new ResponseEntity<>(new ApiResponse<Object>("Bulk delete done.", true), HttpStatus.OK);
     }
+
+
+    @GetMapping("/filter-group")
+    public ResponseEntity filterByGroup(
+            @RequestParam("contactGroup") String contactGroup
+    ){
+
+        List<Contact> contacts = contactService.filterByGroup(contactGroup);
+        return new ResponseEntity<>(new ApiResponse<Object>("Contact filter group.", true, contacts), HttpStatus.OK);
+    }
+
 
 
     @GetMapping("/search")

@@ -23,5 +23,7 @@ public interface ContactService {
 
     List<Contact> search(String searchText);
 
+    List<Contact> filterByGroup(String filterText);
+
     void deleteContacts(List<Long> ids);
 }
