@@ -2,6 +2,7 @@ package com.TurnKeyInterviewTest.controller;
 
 
 import com.TurnKeyInterviewTest.config.ApiResponse;
+import com.TurnKeyInterviewTest.contactmanager.ContactGroup;
 import com.TurnKeyInterviewTest.dao.ContactDao;
 import com.TurnKeyInterviewTest.entity.Contact;
 import com.TurnKeyInterviewTest.exceptions.CustomException;
@@ -46,9 +47,12 @@ public class ContactController {
     @Autowired
     private CsvGeneratorUtil csvGeneratorUtil;
 
-    public ContactController(ContactService contactService, ContactDao contactDao) {
+    @Autowired
+    public ContactController(ContactService contactService, ContactDao contactDao, ContactRepository contactRepository) {
         this.contactService = contactService;
         this.contactDao = contactDao;
+        this.contactRepository = contactRepository;
+
     }
 
     @GetMapping("/export")
@@ -121,6 +125,25 @@ public class ContactController {
                 HttpStatus.OK);
     }
 
+
+
+    @PostMapping("/save")
+    public ResponseEntity saveContact(@RequestBody @Valid AddContactValidation addContactValidation) {
+
+        if (contactRepository.existsByEmail(addContactValidation.getEmail())) {
+            return new ResponseEntity<>(new ApiResponse<Object>("Email already registered", true), HttpStatus.OK);
+        }
+
+       Contact contact = contactService.saveContact(addContactValidation);
+
+        return new ResponseEntity<>(new ApiResponse<Object>("Contact added", true, contact),
+                HttpStatus.OK);
+
+    }
+
+
+
+
     @PostMapping("/add")
     public ResponseEntity registerUser(@RequestBody @Valid AddContactValidation addContactValidation) {
 
@@ -129,7 +152,22 @@ public class ContactController {
         }
 
         //// Save ////
-        contactService.save(addContactValidation);
+        Contact contact = new Contact();
+        contact.setLastName(addContactValidation.getLastName());
+        contact.setFirstName(addContactValidation.getFirstName());
+        contact.setContactImage(addContactValidation.getContactImage());
+
+//        if(!contact.getContactGroup().isEmpty() && !addContactValidation.getContactGroup().isBlank()){
+//          contact.setContactGroup(ContactGroup.valueOf(addContactValidation.getContactGroup()));
+//        }
+
+        contact.setContactGroup(ContactGroup.valueOf(addContactValidation.getContactGroup()));
+        contact.setEmail(addContactValidation.getEmail());
+        contact.setPhoneNumber(addContactValidation.getPhoneNumber());
+        contact.setPhysicalAddress(addContactValidation.getPhysicalAddress());
+
+
+        contactService.save(contact);
         return new ResponseEntity<>(new ApiResponse<Object>("Contact added", true),
                 HttpStatus.OK);
 

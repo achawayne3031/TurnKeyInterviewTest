@@ -19,13 +19,21 @@ import java.util.List;
 @Service
 public class ContactServiceImpl implements ContactService {
 
+
     @Autowired
-    private ContactRepository contactRepository;
+    private final ContactRepository contactRepository;
 
     private ContactDao contactDao;
 
-    public ContactServiceImpl(ContactDao contactDao) {
+
+    @Autowired
+    public ContactServiceImpl(ContactDao contactDao, ContactRepository contactRepository) {
         this.contactDao = contactDao;
+        this.contactRepository = contactRepository;
+    }
+
+    public boolean existsByEmail(String email) {
+        return contactRepository.existsByEmail(email);
     }
 
     public List<Contact> getSortedContacts() {
@@ -34,7 +42,16 @@ public class ContactServiceImpl implements ContactService {
 
 
     @Override
-    public void save(AddContactValidation addContactValidation) {
+    public Contact save(Contact contact) {
+
+
+        contactDao.save(contact);
+
+        return contact;
+    }
+
+    @Override
+    public Contact saveContact(AddContactValidation addContactValidation) {
 
         Contact contact = new Contact();
         contact.setEmail(addContactValidation.getEmail());
@@ -51,7 +68,8 @@ public class ContactServiceImpl implements ContactService {
         contact.setPhoneNumber(addContactValidation.getPhoneNumber());
         contact.setPhysicalAddress(addContactValidation.getPhysicalAddress());
 
-        contactDao.save(contact);
+        return contact;
+
     }
 
     @Override
